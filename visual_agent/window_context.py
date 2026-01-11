@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import os
 import subprocess
+import sys
 
 
 @dataclass(frozen=True)
@@ -10,6 +11,29 @@ class WindowContext:
     platform: str
     active_app: str | None
     active_title: str | None
+
+
+def _windows_active_window() -> tuple[str | None, str | None]:
+    """
+    Returns (process_name, window_title) using pywin32 + psutil.
+    """
+    try:
+        import win32gui  # type: ignore
+        import win32process  # type: ignore
+        import psutil  # type: ignore
+
+        hwnd = win32gui.GetForegroundWindow()
+        title = win32gui.GetWindowText(hwnd) or None
+        _, pid = win32process.GetWindowThreadProcessId(hwnd)
+        proc_name = None
+        if pid:
+            try:
+                proc_name = psutil.Process(pid).name()
+            except Exception:
+                proc_name = None
+        return (proc_name, title)
+    except Exception:
+        return (None, None)
 
 
 def _linux_active_window_title() -> tuple[str | None, str | None]:
@@ -30,6 +54,10 @@ def _linux_active_window_title() -> tuple[str | None, str | None]:
 
 
 def get_window_context() -> WindowContext:
+    if sys.platform == "win32":
+        app, title = _windows_active_window()
+        return WindowContext(platform="windows", active_app=app, active_title=title)
+
     plat = os.uname().sysname.lower()
     if plat == "linux":
         app, title = _linux_active_window_title()

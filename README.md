@@ -17,6 +17,37 @@ The agent runs continuously and **proactively suggests next steps** when it dete
 - Increasing `agent.interval_s`
 - Adding `privacy.redact_rects`
 
+## Quick start (Windows)
+
+### 1) Install Tesseract OCR
+
+Using winget (recommended):
+
+```bash
+winget install --id UB-Mannheim.TesseractOCR -e
+```
+
+Make sure `tesseract.exe` is on your PATH, or set:
+
+```powershell
+setx TESSERACT_CMD "C:\Program Files\Tesseract-OCR\tesseract.exe"
+```
+
+### 2) Install Python deps
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+```
+
+### 3) Create a config + run
+
+```powershell
+copy config.example.yaml config.yaml
+python main.py --config config.yaml
+```
+
 ## Quick start (Linux)
 
 ### 1) Install OS prerequisites
