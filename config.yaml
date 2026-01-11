@@ -1,0 +1,40 @@
+agent:
+  # Capture interval in seconds.
+  interval_s: 1.0
+
+  # If true, only analyze when the active window/app changes (reduces CPU).
+  analyze_on_window_change_only: false
+
+  # If true, save frames to disk for debugging (privacy risk).
+  debug_save_frames: false
+  debug_frames_dir: ".agent_frames"
+
+privacy:
+  # If set, blur out screen regions by rectangle before analysis.
+  # Example: [[0,0,400,200]] means x,y,w,h.
+  redact_rects: []
+
+vision:
+  # OCR language (requires tesseract language packs installed).
+  ocr_lang: "eng"
+
+assist:
+  # If true, show a small always-on-top overlay with suggestions.
+  overlay_enabled: true
+
+  # If false, only log to terminal.
+  terminal_output: true
+
+llm:
+  # Choose provider: "none" (rules only) or "openai_compatible"
+  provider: "none"
+
+  # Used when provider=openai_compatible
+  base_url: "https://api.openai.com/v1"
+  model: "gpt-4o-mini"
+  api_key_env: "OPENAI_API_KEY"
+
+rules:
+  enabled:
+    - excel_charts
+
