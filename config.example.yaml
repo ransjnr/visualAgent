@@ -8,6 +8,8 @@ agent:
   # If true, save frames to disk for debugging (privacy risk).
   debug_save_frames: false
   debug_frames_dir: ".agent_frames"
+  # If true, print OCR text and rule matching details to terminal.
+  debug_ocr: false
 
 privacy:
   # If set, blur out screen regions by rectangle before analysis.
@@ -32,9 +34,17 @@ llm:
   # Used when provider=openai_compatible
   base_url: "https://api.openai.com/v1"
   model: "gpt-4o-mini"
-  api_key_env: "OPENAI_API_KEY"
+  api_key_env: environ.get("OPENAI_API_KEY")
 
 rules:
   enabled:
-    - excel_charts
+    # LLM-powered rule (recommended): dynamically analyzes context and generates intelligent suggestions
+    - excel_llm
+    # Traditional hardcoded rules (optional, for specific use cases or fallback):
+    # - excel_charts          # Chart creation and editing
+    # - excel_formulas        # Formulas (SUM, VLOOKUP, IF, etc.)
+    # - excel_pivottables     # PivotTable creation and management
+    # - excel_data_analysis   # Sorting, filtering, data validation
+    # - excel_formatting      # Cell formatting, conditional formatting
+    # - excel_import_export   # Import/export data, CSV, PDF
 

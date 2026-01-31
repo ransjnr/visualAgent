@@ -20,7 +20,7 @@ class LLMClient:
         self.api_key_env = api_key_env
 
     def enabled(self) -> bool:
-        if self.provider == "none":
+        if self.provider == "none" or self.provider == "rules_only":
             return False
         return bool(os.environ.get(self.api_key_env))
 

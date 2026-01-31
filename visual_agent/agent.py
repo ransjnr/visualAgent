@@ -21,14 +21,36 @@ class AgentOutput:
 class VisualAgent:
     def __init__(self, cfg: AppConfig) -> None:
         self.cfg = cfg
-        self.rules = build_rules(cfg.rules.enabled)
-        self.overlay = Overlay()
         self.llm = LLMClient(
             provider=cfg.llm.provider,
             base_url=cfg.llm.base_url,
             model=cfg.llm.model,
             api_key_env=cfg.llm.api_key_env,
         )
+        # Pass LLM client to rules so LLM-powered rules can use it
+        self.rules = build_rules(cfg.rules.enabled, llm_client=self.llm)
+        
+        # Debug: Print LLM and rule status
+        if cfg.agent.debug_ocr:
+            import os
+            print("\n" + "=" * 72)
+            print("LLM Configuration Status:")
+            print(f"  Provider: {cfg.llm.provider}")
+            print(f"  Model: {cfg.llm.model}")
+            print(f"  Base URL: {cfg.llm.base_url}")
+            print(f"  API Key Env Var Name: {cfg.llm.api_key_env}")
+            api_key = os.environ.get(cfg.llm.api_key_env)
+            if api_key:
+                print(f"  API Key: Found ({len(api_key)} chars)")
+                print(f"  LLM Enabled: {self.llm.enabled()}")
+            else:
+                print(f"  API Key: NOT FOUND in environment variable '{cfg.llm.api_key_env}'")
+                print(f"  LLM Enabled: {self.llm.enabled()}")
+                print(f"  → Set it with: setx {cfg.llm.api_key_env} \"your-api-key\"")
+            print(f"  Rules loaded: {[r.name for r in self.rules]}")
+            print("=" * 72 + "\n")
+        
+        self.overlay = Overlay()
         self._last_window_sig: tuple[str | None, str | None] | None = None
         self._last_suggestion_key: str | None = None
 
@@ -52,6 +74,9 @@ class VisualAgent:
             ocr = ocr_image(img, lang=self.cfg.vision.ocr_lang)
             obs = Observation(active_app=win.active_app, active_title=win.active_title, ocr_text=ocr.text)
 
+            if self.cfg.agent.debug_ocr:
+                self._print_debug_info(obs)
+
             out = self._analyze(obs)
             self._emit(out, obs)
 
@@ -61,33 +86,17 @@ class VisualAgent:
         best: Suggestion | None = None
         for r in self.rules:
             conf = r.match(obs)
+            if self.cfg.agent.debug_ocr:
+                print(f"  Rule '{r.name}': confidence = {conf:.2f}")
             if conf <= 0:
                 continue
             s = r.suggest(obs)
             if (best is None) or (s.confidence > best.confidence):
                 best = s
 
-        # Optional LLM refinement: turn OCR/window context into more tailored steps
-        if best and self.llm.enabled():
-            system = (
-                "You are an on-screen assistant. Output a concise step-by-step checklist (max 6 steps). "
-                "Do not ask questions. Avoid disclaimers. Be specific about UI clicks/tabs when possible."
-            )
-            user = (
-                f"Active window title: {obs.active_title!r}\n"
-                f"Active app: {obs.active_app!r}\n"
-                f"On-screen text (OCR, noisy): {obs.ocr_text!r}\n\n"
-                f"User likely task: {best.title}\n"
-                "Produce steps."
-            )
-            steps = self.llm.suggest_steps(LLMRequest(system=system, user=user))
-            if steps:
-                best = Suggestion(
-                    title=best.title,
-                    steps=steps,
-                    confidence=min(1.0, best.confidence + 0.05),
-                    source=f"{best.source}+llm",
-                )
+        # Note: LLM-powered rules handle their own LLM calls internally.
+        # Traditional rules can still be refined by LLM if needed, but excel_llm rule
+        # already uses LLM for both matching and suggestions.
 
         return AgentOutput(suggestion=best)
 
@@ -112,6 +121,23 @@ class VisualAgent:
             print(body)
             if obs.active_title:
                 print(f"\nWindow: {obs.active_title}")
+
+    def _print_debug_info(self, obs: Observation) -> None:
+        """Print debug information about OCR and window context."""
+        print("\n" + "-" * 72)
+        print("DEBUG: Observation")
+        print("-" * 72)
+        print(f"Active App: {obs.active_app}")
+        print(f"Active Title: {obs.active_title}")
+        print(f"OCR Text ({len(obs.ocr_text)} chars):")
+        if obs.ocr_text:
+            # Show first 500 chars, or full text if shorter
+            ocr_preview = obs.ocr_text[:500] + ("..." if len(obs.ocr_text) > 500 else "")
+            print(f"  {ocr_preview!r}")
+        else:
+            print("  (empty)")
+        print("-" * 72)
+        print("Rule Matching:")
 
     def _post_overlay(self, title: str, body: str) -> None:
         if not self.cfg.assist.overlay_enabled:

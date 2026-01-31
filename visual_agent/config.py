@@ -6,7 +6,6 @@ from typing import Any
 
 import yaml
 
-
 @dataclass(frozen=True)
 class LLMConfig:
     provider: str = "none"
@@ -37,6 +36,7 @@ class AgentConfig:
     analyze_on_window_change_only: bool = False
     debug_save_frames: bool = False
     debug_frames_dir: str = ".agent_frames"
+    debug_ocr: bool = False  # Show OCR text and rule matching details
 
 
 @dataclass(frozen=True)
@@ -74,6 +74,7 @@ def load_config(path: str | Path) -> AppConfig:
         analyze_on_window_change_only=bool(_get(raw, "agent.analyze_on_window_change_only", False)),
         debug_save_frames=bool(_get(raw, "agent.debug_save_frames", False)),
         debug_frames_dir=str(_get(raw, "agent.debug_frames_dir", ".agent_frames")),
+        debug_ocr=bool(_get(raw, "agent.debug_ocr", False)),
     )
     privacy = PrivacyConfig(
         redact_rects=_get(raw, "privacy.redact_rects", []) or [],
@@ -92,7 +93,6 @@ def load_config(path: str | Path) -> AppConfig:
         api_key_env=str(_get(raw, "llm.api_key_env", "OPENAI_API_KEY")),
     )
     rules = RulesConfig(
-        enabled=list(_get(raw, "rules.enabled", ["excel_charts"])),
+        enabled=list(_get(raw, "rules.enabled", ["excel_llm"])),
     )
     return AppConfig(agent=agent, privacy=privacy, vision=vision, assist=assist, llm=llm, rules=rules)
-

@@ -7,6 +7,6 @@ pyyaml==6.0.2
 # Optional UI overlay (tkinter is stdlib on many distros; if missing, install via OS package manager)
 
 # Windows-only helpers (foreground window / process name)
-pywin32==306; sys_platform == "win32"
+pywin32==311; sys_platform == "win32"
 psutil==6.0.0; sys_platform == "win32"
 
