@@ -1,0 +1,52 @@
+agent:
+  # Capture interval in seconds.
+  interval_s: 0.5
+
+  # If true, only analyze when the active window/app changes (reduces CPU).
+  analyze_on_window_change_only: false
+
+  # If true, save frames to disk for debugging (privacy risk).
+  debug_save_frames: false
+  debug_frames_dir: ".agent_frames"
+  # If true, print OCR text and rule matching details to terminal.
+  debug_ocr: true
+
+privacy:
+  # If set, blur out screen regions by rectangle before analysis.
+  # Example: [[0,0,400,200]] means x,y,w,h.
+  redact_rects: []
+
+vision:
+  # OCR language (requires tesseract language packs installed).
+  ocr_lang: "eng"
+
+assist:
+  # If true, show a small always-on-top overlay with suggestions.
+  overlay_enabled: true
+
+  # If false, only log to terminal.
+  terminal_output: true
+
+llm:
+  # Choose provider: "none" (rules only) or "openai_compatible"
+  provider: "openai_compatible"
+
+  # Used when provider=openai_compatible
+  base_url: "https://api.openai.com/v1"
+  model: "gpt-4o-mini"
+  # Environment variable name that contains your API key (set in .env.local)
+  # The actual API key should be in .env.local file, not here!
+  api_key_env: "OPENAI_API_KEY"
+
+rules:
+  enabled:
+    # LLM-powered rule that dynamically analyzes Excel context and generates suggestions
+    - excel_llm
+    # Traditional hardcoded rules (optional, can be used alongside or instead of excel_llm)
+    # - excel_charts
+    # - excel_formulas
+    # - excel_pivottables
+    # - excel_data_analysis
+    # - excel_formatting
+    # - excel_import_export
+
